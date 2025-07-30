@@ -4,7 +4,7 @@ import { api } from '../lib/api-client';
 import { API_ENDPOINTS } from '../config/api';
 
 export interface User {
-  id?: string;
+  id: number;
   name: string;
   email: string;
   role: 'user' | 'artist';
@@ -12,7 +12,6 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
   signin: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string, role: 'user' | 'artist') => Promise<void>;
@@ -23,7 +22,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -40,11 +38,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signin = async (email: string, password: string) => {
     try {
-      const data = await api.post<{ message: string; role: 'user' | 'artist'; name: string }>(API_ENDPOINTS.auth.signin, {
+      const data = await api.post<{ message: string; role: 'user' | 'artist'; name: string; id: number }>(API_ENDPOINTS.auth.signin, {
         email,
         password
       });
-      const user: User = { name: data.name, email, role: data.role };
+      const user: User = { 
+        id: data.id, 
+        name: data.name, 
+        email, 
+        role: data.role 
+      };
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
       navigate(data.role === 'artist' ? '/artist-dashboard' : '/collector-dashboard');
@@ -70,14 +73,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    navigate('/signin');
+  const signout = async () => {
+    try {
+      // Call logout endpoint to clear server session
+      await api.post(API_ENDPOINTS.auth.logout, {});
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user');
+      navigate('/signin');
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signin, signup, signout }}>
+    <AuthContext.Provider value={{ user, isLoading, signin, signup, signout }}>
       {children}
     </AuthContext.Provider>
   );

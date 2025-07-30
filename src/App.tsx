@@ -27,6 +27,10 @@ import CollectorDashboard from '@/pages/CollectorDashboard';
 import CollectorCategories from '@/pages/CollectorCategories';
 import CollectorArtists from '@/pages/CollectorArtists';
 import CollectorArtworks from '@/pages/CollectorArtworks';
+import ArtistArtworks from './pages/ArtistArtworks';
+import ArtistTransactions from './pages/ArtistTransactions';
+import ArtistMarketplace from './pages/ArtistMarketplace';
+import ArtistPortfolio from './pages/ArtistPortfolio';
 
 const queryClient = new QueryClient()
 
@@ -165,6 +169,38 @@ export default function App() {
                   element={
                     <PrivateRoute>
                       <CollectorArtworks />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/artist-artworks"
+                  element={
+                    <PrivateRoute>
+                      <ArtistArtworks />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/artist-transactions"
+                  element={
+                    <PrivateRoute>
+                      <ArtistTransactions />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/artist-marketplace"
+                  element={
+                    <PrivateRoute>
+                      <ArtistMarketplace />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/artist-portfolio"
+                  element={
+                    <PrivateRoute>
+                      <ArtistPortfolio />
                     </PrivateRoute>
                   }
                 />

@@ -200,6 +200,95 @@ def get_dashboard_stats():
         except:
             pass
 
+@app.route('/dashboard/artist-stats', methods=['GET'])
+def get_artist_dashboard_stats():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        print(f"Fetching artist dashboard stats for user_id: {user_id}")
+        
+        # Get total artworks by this artist
+        cursor.execute('SELECT COUNT(*) as total_artworks FROM artworks WHERE created_by = %s', (user_id,))
+        total_artworks = cursor.fetchone()['total_artworks']
+        
+        # Get total sales (completed transactions where artist is seller)
+        cursor.execute('''
+            SELECT COUNT(*) as total_sales, COALESCE(SUM(amount), 0) as total_earnings
+            FROM transactions t
+            JOIN artworks a ON t.artwork_id = a.id
+            WHERE a.created_by = %s AND t.status = 'completed'
+        ''', (user_id,))
+        sales_data = cursor.fetchone()
+        total_sales = sales_data['total_sales']
+        total_earnings = sales_data['total_earnings']
+        if hasattr(total_earnings, '__float__'):
+            total_earnings = float(total_earnings)
+        
+        # Get artworks by category
+        cursor.execute('''
+            SELECT c.name as category_name, COUNT(a.id) as artwork_count 
+            FROM categories c 
+            LEFT JOIN artworks a ON c.id = a.category_id AND a.created_by = %s
+            WHERE c.created_by = %s 
+            GROUP BY c.id, c.name
+            ORDER BY artwork_count DESC
+        ''', (user_id, user_id))
+        artworks_by_category = cursor.fetchall()
+        
+        # Get recent artworks
+        cursor.execute('''
+            SELECT a.title, a.price, c.name as category_name, a.status, a.created_at
+            FROM artworks a 
+            LEFT JOIN categories c ON a.category_id = c.id 
+            WHERE a.created_by = %s 
+            ORDER BY a.created_at DESC 
+            LIMIT 5
+        ''', (user_id,))
+        recent_artworks = cursor.fetchall()
+        for artwork in recent_artworks:
+            if 'price' in artwork and hasattr(artwork['price'], '__float__'):
+                artwork['price'] = float(artwork['price'])
+        
+        # Get monthly sales
+        cursor.execute('''
+            SELECT DATE_FORMAT(t.transaction_date, '%Y-%m') as month, COUNT(*) as count
+            FROM transactions t
+            JOIN artworks a ON t.artwork_id = a.id
+            WHERE a.created_by = %s AND t.status = 'completed'
+            AND t.transaction_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY DATE_FORMAT(t.transaction_date, '%Y-%m')
+            ORDER BY month
+        ''', (user_id,))
+        monthly_sales = cursor.fetchall()
+        
+        result = {
+            'total_artworks': total_artworks,
+            'total_sales': total_sales,
+            'total_earnings': total_earnings,
+            'artworks_by_category': artworks_by_category,
+            'recent_artworks': recent_artworks,
+            'monthly_sales': monthly_sales
+        }
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Artist dashboard stats error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except:
+            pass
+
 @app.route('/test', methods=['GET'])
 def test():
     return jsonify({'message': 'Server is running!'}), 200
@@ -246,7 +335,12 @@ def login():
             return jsonify({'error': 'Invalid credentials'}), 401
         session['user_id'] = user['id']
         session['role'] = user['role']
-        return jsonify({'message': 'Login successful', 'role': user['role'], 'name': user['name']}), 200
+        return jsonify({
+            'message': 'Login successful', 
+            'role': user['role'], 
+            'name': user['name'],
+            'id': user['id']
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
@@ -533,6 +627,397 @@ def delete_artwork(artwork_id):
         return jsonify({'message': 'Artwork deleted successfully'}), 200
     except Exception as e:
         print(f"Delete artwork error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/artworks/my-artworks', methods=['GET'])
+def get_my_artworks():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            SELECT a.*, c.name as category_name 
+            FROM artworks a 
+            LEFT JOIN categories c ON a.category_id = c.id 
+            WHERE a.created_by = %s
+            ORDER BY a.created_at DESC
+        ''', (user_id,))
+        artworks = cursor.fetchall()
+        
+        # Convert Decimal prices to float
+        for artwork in artworks:
+            if 'price' in artwork and hasattr(artwork['price'], '__float__'):
+                artwork['price'] = float(artwork['price'])
+        
+        return jsonify({'artworks': artworks}), 200
+    except Exception as e:
+        print(f"My artworks error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/transactions', methods=['GET'])
+def get_transactions():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            SELECT t.*, a.title as artwork_title, 
+                   CASE 
+                       WHEN t.buyer_id = %s THEN 'You'
+                       ELSE u1.name 
+                   END as buyer_name,
+                   CASE 
+                       WHEN t.seller_id = %s THEN 'You'
+                       ELSE u2.name 
+                   END as seller_name
+            FROM transactions t
+            JOIN artworks a ON t.artwork_id = a.id
+            JOIN users u1 ON t.buyer_id = u1.id
+            JOIN users u2 ON t.seller_id = u2.id
+            WHERE t.buyer_id = %s OR t.seller_id = %s
+            ORDER BY t.transaction_date DESC
+        ''', (user_id, user_id, user_id, user_id))
+        transactions = cursor.fetchall()
+        
+        # Convert Decimal amounts to float
+        for transaction in transactions:
+            if 'amount' in transaction and hasattr(transaction['amount'], '__float__'):
+                transaction['amount'] = float(transaction['amount'])
+        
+        return jsonify({'transactions': transactions}), 200
+    except Exception as e:
+        print(f"Transactions error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/transactions', methods=['POST'])
+def create_transaction():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    artwork_id = data.get('artwork_id')
+    amount = data.get('amount')
+    payment_method = data.get('payment_method', 'credit_card')
+    notes = data.get('notes', '')
+    
+    if not artwork_id or not amount:
+        return jsonify({'error': 'Artwork ID and amount are required'}), 400
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        buyer_id = session['user_id']
+        
+        # Get artwork details and seller
+        cursor.execute('SELECT created_by, price FROM artworks WHERE id = %s AND status = "available"', (artwork_id,))
+        artwork = cursor.fetchone()
+        
+        if not artwork:
+            return jsonify({'error': 'Artwork not found or not available'}), 404
+        
+        seller_id = artwork['created_by']
+        
+        if buyer_id == seller_id:
+            return jsonify({'error': 'Cannot buy your own artwork'}), 400
+        
+        # Create transaction
+        cursor.execute('''
+            INSERT INTO transactions (buyer_id, seller_id, artwork_id, amount, payment_method, notes, status)
+            VALUES (%s, %s, %s, %s, %s, %s, 'completed')
+        ''', (buyer_id, seller_id, artwork_id, amount, payment_method, notes))
+        
+        # Update artwork status to sold
+        cursor.execute('UPDATE artworks SET status = "sold" WHERE id = %s', (artwork_id,))
+        
+        conn.commit()
+        
+        return jsonify({'message': 'Transaction completed successfully'}), 201
+    except Exception as e:
+        print(f"Create transaction error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/transactions/my-transactions', methods=['GET'])
+def get_my_transactions():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            SELECT t.*, a.title as artwork_title, 
+                   CASE 
+                       WHEN t.buyer_id = %s THEN 'You'
+                       ELSE u1.name 
+                   END as buyer_name,
+                   CASE 
+                       WHEN t.seller_id = %s THEN 'You'
+                       ELSE u2.name 
+                   END as seller_name
+            FROM transactions t
+            JOIN artworks a ON t.artwork_id = a.id
+            JOIN users u1 ON t.buyer_id = u1.id
+            JOIN users u2 ON t.seller_id = u2.id
+            WHERE t.buyer_id = %s OR t.seller_id = %s
+            ORDER BY t.transaction_date DESC
+        ''', (user_id, user_id, user_id, user_id))
+        transactions = cursor.fetchall()
+        
+        # Convert Decimal amounts to float
+        for transaction in transactions:
+            if 'amount' in transaction and hasattr(transaction['amount'], '__float__'):
+                transaction['amount'] = float(transaction['amount'])
+        
+        return jsonify({'transactions': transactions}), 200
+    except Exception as e:
+        print(f"My transactions error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/marketplace/available', methods=['GET'])
+def get_marketplace_artworks():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            SELECT a.*, c.name as category_name, ar.name as artist_name, u.name as seller_name
+            FROM artworks a 
+            LEFT JOIN categories c ON a.category_id = c.id 
+            LEFT JOIN artists ar ON a.artist_id = ar.id
+            LEFT JOIN users u ON a.created_by = u.id
+            WHERE a.status = 'available' AND a.created_by != %s
+            ORDER BY a.created_at DESC
+        ''', (user_id,))
+        artworks = cursor.fetchall()
+        
+        # Convert Decimal prices to float
+        for artwork in artworks:
+            if 'price' in artwork and hasattr(artwork['price'], '__float__'):
+                artwork['price'] = float(artwork['price'])
+        
+        return jsonify({'artworks': artworks}), 200
+    except Exception as e:
+        print(f"Marketplace artworks error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# Portfolio routes
+@app.route('/portfolio', methods=['GET'])
+def get_portfolios():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            SELECT * FROM artist_portfolios 
+            WHERE artist_id = %s 
+            ORDER BY created_at DESC
+        ''', (user_id,))
+        portfolios = cursor.fetchall()
+        
+        return jsonify({'portfolios': portfolios}), 200
+    except Exception as e:
+        print(f"Get portfolios error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/portfolio/my-portfolio', methods=['GET'])
+def get_my_portfolio():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            SELECT * FROM artist_portfolios 
+            WHERE artist_id = %s 
+            ORDER BY created_at DESC
+        ''', (user_id,))
+        portfolios = cursor.fetchall()
+        
+        return jsonify({'portfolios': portfolios}), 200
+    except Exception as e:
+        print(f"Get my portfolio error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/portfolio', methods=['POST'])
+def create_portfolio():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        description = data.get('description')
+        portfolio_type = data.get('portfolio_type', 'gallery')
+        image_url = data.get('image_url')
+        external_link = data.get('external_link')
+        
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        cursor.execute('''
+            INSERT INTO artist_portfolios (artist_id, title, description, portfolio_type, image_url, external_link)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        ''', (user_id, title, description, portfolio_type, image_url, external_link))
+        
+        portfolio_id = cursor.lastrowid
+        conn.commit()
+        
+        # Get the created portfolio
+        cursor.execute('SELECT * FROM artist_portfolios WHERE id = %s', (portfolio_id,))
+        portfolio = cursor.fetchone()
+        
+        return jsonify({'portfolio': portfolio, 'message': 'Portfolio created successfully'}), 201
+    except Exception as e:
+        print(f"Create portfolio error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/portfolio/<int:portfolio_id>', methods=['PUT'])
+def update_portfolio(portfolio_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        description = data.get('description')
+        portfolio_type = data.get('portfolio_type')
+        image_url = data.get('image_url')
+        external_link = data.get('external_link')
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        
+        # Check if portfolio exists and belongs to user
+        cursor.execute('SELECT * FROM artist_portfolios WHERE id = %s AND artist_id = %s', (portfolio_id, user_id))
+        portfolio = cursor.fetchone()
+        
+        if not portfolio:
+            return jsonify({'error': 'Portfolio not found'}), 404
+        
+        # Update portfolio
+        update_fields = []
+        update_values = []
+        
+        if title is not None:
+            update_fields.append('title = %s')
+            update_values.append(title)
+        if description is not None:
+            update_fields.append('description = %s')
+            update_values.append(description)
+        if portfolio_type is not None:
+            update_fields.append('portfolio_type = %s')
+            update_values.append(portfolio_type)
+        if image_url is not None:
+            update_fields.append('image_url = %s')
+            update_values.append(image_url)
+        if external_link is not None:
+            update_fields.append('external_link = %s')
+            update_values.append(external_link)
+        
+        if update_fields:
+            update_values.append(portfolio_id)
+            update_values.append(user_id)
+            
+            query = f'''
+                UPDATE artist_portfolios 
+                SET {', '.join(update_fields)}
+                WHERE id = %s AND artist_id = %s
+            '''
+            cursor.execute(query, update_values)
+            conn.commit()
+        
+        # Get updated portfolio
+        cursor.execute('SELECT * FROM artist_portfolios WHERE id = %s', (portfolio_id,))
+        updated_portfolio = cursor.fetchone()
+        
+        return jsonify({'portfolio': updated_portfolio, 'message': 'Portfolio updated successfully'}), 200
+    except Exception as e:
+        print(f"Update portfolio error: {e}")
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/portfolio/<int:portfolio_id>', methods=['DELETE'])
+def delete_portfolio(portfolio_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        
+        # Check if portfolio exists and belongs to user
+        cursor.execute('SELECT * FROM artist_portfolios WHERE id = %s AND artist_id = %s', (portfolio_id, user_id))
+        portfolio = cursor.fetchone()
+        
+        if not portfolio:
+            return jsonify({'error': 'Portfolio not found'}), 404
+        
+        # Delete portfolio
+        cursor.execute('DELETE FROM artist_portfolios WHERE id = %s AND artist_id = %s', (portfolio_id, user_id))
+        conn.commit()
+        
+        return jsonify({'message': 'Portfolio deleted successfully'}), 200
+    except Exception as e:
+        print(f"Delete portfolio error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()

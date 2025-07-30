@@ -48,11 +48,14 @@ export function Header() {
           <Link to="/about" className="text-sm hover:text-primary">
             About
           </Link>
-          {user?.role === 'artist' && (
+          <Link to="/signin" className="text-sm hover:text-primary">
+            Login
+          </Link>
+          {/* {user?.role === 'artist' && (
             <Link to="/manage-artworks" className="text-sm hover:text-primary">
               My Artworks
             </Link>
-          )}
+          )} */}
           <Link to="/cart" className="relative">
             <ShoppingCart className="h-6 w-6" />
             {getTotalItems() > 0 && (

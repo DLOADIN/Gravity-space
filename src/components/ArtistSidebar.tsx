@@ -2,44 +2,50 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  FolderOpen, 
-  Users, 
-  Palette,
+  Palette, 
+  Briefcase,
+  ShoppingCart,
+  Store,
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export function CollectorSidebar() {
+export function ArtistSidebar() {
   const location = useLocation();
   const { signout } = useAuth();
 
   const menuItems = [
     {
-      path: '/collector-dashboard',
+      path: '/artist-dashboard',
       icon: LayoutDashboard,
       label: 'Dashboard'
     },
     {
-      path: '/collector-categories',
-      icon: FolderOpen,
-      label: 'Categories'
+      path: '/artist-portfolio',
+      icon: Briefcase,
+      label: 'Portfolio'
     },
     {
-      path: '/collector-artists',
-      icon: Users,
-      label: 'Artists'
-    },
-    {
-      path: '/collector-artworks',
+      path: '/artist-artworks',
       icon: Palette,
-      label: 'Artworks'
+      label: 'My Artworks'
+    },
+    {
+      path: '/artist-transactions',
+      icon: ShoppingCart,
+      label: 'Transactions'
+    },
+    {
+      path: '/artist-marketplace',
+      icon: Store,
+      label: 'Marketplace'
     }
   ];
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
       <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-800">Collector Panel</h2>
+        <h2 className="text-xl font-bold text-gray-800">Artist Panel</h2>
       </div>
       
       <nav className="flex-1">
