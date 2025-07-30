@@ -107,11 +107,6 @@ export function SignIn() {
             </CardFooter>
           </form>
         </Card>
-        
-        {/* Debug component */}
-        <div className="mt-8">
-          <TestConnection />
-        </div>
       </div>
       <Toaster />
     </>

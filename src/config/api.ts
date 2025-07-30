@@ -5,6 +5,9 @@ export const API_ENDPOINTS = {
     signin: '/login',
     signup: '/signup',
   },
+  dashboard: {
+    stats: '/dashboard/stats',
+  },
   categories: '/categories',
   artists: '/artists',
   artworks: '/artworks',

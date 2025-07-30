@@ -19,6 +19,187 @@ DB_CONFIG = {
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
+@app.route('/dashboard/stats/test', methods=['GET'])
+def get_dashboard_stats_test():
+    """Test endpoint that doesn't require authentication"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Get a test user ID (first user in the system)
+        cursor.execute('SELECT id FROM users LIMIT 1')
+        user_result = cursor.fetchone()
+        
+        if not user_result:
+            return jsonify({'error': 'No users found in database'}), 404
+        
+        user_id = user_result['id']
+        print(f"Testing dashboard stats for user_id: {user_id}")
+        
+        # Get total counts
+        cursor.execute('SELECT COUNT(*) as total_categories FROM categories WHERE created_by = %s', (user_id,))
+        total_categories = cursor.fetchone()['total_categories']
+        
+        cursor.execute('SELECT COUNT(*) as total_artists FROM artists WHERE created_by = %s', (user_id,))
+        total_artists = cursor.fetchone()['total_artists']
+        
+        cursor.execute('SELECT COUNT(*) as total_artworks FROM artworks WHERE created_by = %s', (user_id,))
+        total_artworks = cursor.fetchone()['total_artworks']
+        
+        cursor.execute('SELECT COALESCE(SUM(price), 0) as total_value FROM artworks WHERE created_by = %s', (user_id,))
+        total_value = cursor.fetchone()['total_value']
+        # Convert Decimal to float
+        if hasattr(total_value, '__float__'):
+            total_value = float(total_value)
+        
+        result = {
+            'total_categories': total_categories,
+            'total_artists': total_artists,
+            'total_artworks': total_artworks,
+            'total_value': total_value,
+            'artworks_by_category': [],
+            'recent_artworks': [],
+            'monthly_artworks': []
+        }
+        
+        cursor.close()
+        conn.close()
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Test dashboard stats error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/dashboard/stats', methods=['GET'])
+def get_dashboard_stats():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        user_id = session['user_id']
+        print(f"Fetching dashboard stats for user_id: {user_id}")
+        
+        # Get total counts
+        try:
+            cursor.execute('SELECT COUNT(*) as total_categories FROM categories WHERE created_by = %s', (user_id,))
+            total_categories = cursor.fetchone()['total_categories']
+            print(f"Total categories: {total_categories}")
+        except Exception as e:
+            print(f"Error getting categories count: {e}")
+            total_categories = 0
+        
+        try:
+            cursor.execute('SELECT COUNT(*) as total_artists FROM artists WHERE created_by = %s', (user_id,))
+            total_artists = cursor.fetchone()['total_artists']
+            print(f"Total artists: {total_artists}")
+        except Exception as e:
+            print(f"Error getting artists count: {e}")
+            total_artists = 0
+        
+        try:
+            cursor.execute('SELECT COUNT(*) as total_artworks FROM artworks WHERE created_by = %s', (user_id,))
+            total_artworks = cursor.fetchone()['total_artworks']
+            print(f"Total artworks: {total_artworks}")
+        except Exception as e:
+            print(f"Error getting artworks count: {e}")
+            total_artworks = 0
+        
+        # Get total value of artworks
+        try:
+            cursor.execute('SELECT COALESCE(SUM(price), 0) as total_value FROM artworks WHERE created_by = %s', (user_id,))
+            total_value = cursor.fetchone()['total_value']
+            # Convert Decimal to float
+            if hasattr(total_value, '__float__'):
+                total_value = float(total_value)
+            print(f"Total value: {total_value}")
+        except Exception as e:
+            print(f"Error getting total value: {e}")
+            total_value = 0.0
+        
+        # Get artworks by category
+        try:
+            cursor.execute('''
+                SELECT c.name as category_name, COUNT(a.id) as artwork_count 
+                FROM categories c 
+                LEFT JOIN artworks a ON c.id = a.category_id AND a.created_by = %s
+                WHERE c.created_by = %s 
+                GROUP BY c.id, c.name
+                ORDER BY artwork_count DESC
+            ''', (user_id, user_id))
+            artworks_by_category = cursor.fetchall()
+            print(f"Artworks by category: {len(artworks_by_category)} categories")
+        except Exception as e:
+            print(f"Error getting artworks by category: {e}")
+            artworks_by_category = []
+        
+        # Get recent artworks (last 5)
+        try:
+            cursor.execute('''
+                SELECT a.title, a.price, c.name as category_name, ar.name as artist_name, a.created_at
+                FROM artworks a 
+                LEFT JOIN categories c ON a.category_id = c.id 
+                LEFT JOIN artists ar ON a.artist_id = ar.id 
+                WHERE a.created_by = %s 
+                ORDER BY a.created_at DESC 
+                LIMIT 5
+            ''', (user_id,))
+            recent_artworks = cursor.fetchall()
+            # Convert Decimal prices to float
+            for artwork in recent_artworks:
+                if 'price' in artwork and hasattr(artwork['price'], '__float__'):
+                    artwork['price'] = float(artwork['price'])
+            print(f"Recent artworks: {len(recent_artworks)} artworks")
+        except Exception as e:
+            print(f"Error getting recent artworks: {e}")
+            recent_artworks = []
+        
+        # Get monthly artwork additions (last 6 months)
+        try:
+            cursor.execute('''
+                SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count
+                FROM artworks 
+                WHERE created_by = %s 
+                AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                ORDER BY month
+            ''', (user_id,))
+            monthly_artworks = cursor.fetchall()
+            print(f"Monthly artworks: {len(monthly_artworks)} months")
+        except Exception as e:
+            print(f"Error getting monthly artworks: {e}")
+            monthly_artworks = []
+        
+        result = {
+            'total_categories': total_categories,
+            'total_artists': total_artists,
+            'total_artworks': total_artworks,
+            'total_value': total_value,
+            'artworks_by_category': artworks_by_category,
+            'recent_artworks': recent_artworks,
+            'monthly_artworks': monthly_artworks
+        }
+        
+        print("Dashboard stats generated successfully")
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"Dashboard stats error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        try:
+            cursor.close()
+            conn.close()
+        except:
+            pass
+
 @app.route('/test', methods=['GET'])
 def test():
     return jsonify({'message': 'Server is running!'}), 200
@@ -101,6 +282,7 @@ def get_categories():
         categories = cursor.fetchall()
         return jsonify({'categories': categories}), 200
     except Exception as e:
+        print(f"Categories error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -123,6 +305,7 @@ def create_category():
         conn.commit()
         return jsonify({'message': 'Category created successfully'}), 201
     except Exception as e:
+        print(f"Create category error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -145,6 +328,7 @@ def update_category(category_id):
         conn.commit()
         return jsonify({'message': 'Category updated successfully'}), 200
     except Exception as e:
+        print(f"Update category error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -161,6 +345,7 @@ def delete_category(category_id):
         conn.commit()
         return jsonify({'message': 'Category deleted successfully'}), 200
     except Exception as e:
+        print(f"Delete category error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -178,6 +363,7 @@ def get_artists():
         artists = cursor.fetchall()
         return jsonify({'artists': artists}), 200
     except Exception as e:
+        print(f"Artists error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -203,6 +389,7 @@ def create_artist():
         conn.commit()
         return jsonify({'message': 'Artist created successfully'}), 201
     except Exception as e:
+        print(f"Create artist error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -228,6 +415,7 @@ def update_artist(artist_id):
         conn.commit()
         return jsonify({'message': 'Artist updated successfully'}), 200
     except Exception as e:
+        print(f"Update artist error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -244,6 +432,7 @@ def delete_artist(artist_id):
         conn.commit()
         return jsonify({'message': 'Artist deleted successfully'}), 200
     except Exception as e:
+        print(f"Delete artist error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -265,6 +454,12 @@ def get_artworks():
             ORDER BY a.created_at DESC
         ''')
         artworks = cursor.fetchall()
+        
+        # Convert Decimal prices to float
+        for artwork in artworks:
+            if 'price' in artwork and hasattr(artwork['price'], '__float__'):
+                artwork['price'] = float(artwork['price'])
+        
         return jsonify({'artworks': artworks}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -293,6 +488,7 @@ def create_artwork():
         conn.commit()
         return jsonify({'message': 'Artwork created successfully'}), 201
     except Exception as e:
+        print(f"Create artwork error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -319,6 +515,7 @@ def update_artwork(artwork_id):
         conn.commit()
         return jsonify({'message': 'Artwork updated successfully'}), 200
     except Exception as e:
+        print(f"Update artwork error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
@@ -335,6 +532,7 @@ def delete_artwork(artwork_id):
         conn.commit()
         return jsonify({'message': 'Artwork deleted successfully'}), 200
     except Exception as e:
+        print(f"Delete artwork error: {e}")
         return jsonify({'error': str(e)}), 500
     finally:
         cursor.close()
