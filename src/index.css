@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 10% 5%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 20 10% 5%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 10% 5%;
+
+    --primary: 24 10% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 60 5% 96%;
+    --secondary-foreground: 24 5% 10%;
+
+    --muted: 60 5% 96%;
+    --muted-foreground: 25 5% 45%;
+
+    --accent: 12 30% 97%;
+    --accent-foreground: 24 9% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 20 5% 90%;
+    --input: 20 5% 90%;
+    --ring: 24 5% 50%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 20 10% 4%;
+    --foreground: 0 0% 98%;
+
+    --card: 20 10% 4%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 20 10% 4%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 24 10% 10%;
+
+    --secondary: 12 5% 15%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 12 5% 15%;
+    --muted-foreground: 24 5% 70%;
+
+    --accent: 12 5% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 12 5% 15%;
+    --input: 12 5% 15%;
+    --ring: 24 5% 70%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  body {
+    @apply tracking-tight;
+  }
+
+  #root {
+    @apply w-full;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-md border border-white/10 shadow-glass;
+  }
+
+  .image-fade-in {
+    @apply opacity-0 transition-opacity duration-500;
+  }
+
+  .image-fade-in.loaded {
+    @apply opacity-100;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .page-transition {
+    @apply animate-fade-in;
+  }
+
+  .hover-lift {
+    @apply transition-transform duration-300 ease-out;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1;
+  }
+}
