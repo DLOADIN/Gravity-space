@@ -24,6 +24,9 @@ import CollectionPage from '@/pages/CollectionPage'
 import EventPage from '@/pages/EventPage'
 import ArtistDashboard from '@/pages/ArtistDashboard';
 import CollectorDashboard from '@/pages/CollectorDashboard';
+import CollectorCategories from '@/pages/CollectorCategories';
+import CollectorArtists from '@/pages/CollectorArtists';
+import CollectorArtworks from '@/pages/CollectorArtworks';
 
 const queryClient = new QueryClient()
 
@@ -138,6 +141,30 @@ export default function App() {
                   element={
                     <PrivateRoute>
                       <CollectorDashboard />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/collector-categories"
+                  element={
+                    <PrivateRoute>
+                      <CollectorCategories />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/collector-artists"
+                  element={
+                    <PrivateRoute>
+                      <CollectorArtists />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/collector-artworks"
+                  element={
+                    <PrivateRoute>
+                      <CollectorArtworks />
                     </PrivateRoute>
                   }
                 />

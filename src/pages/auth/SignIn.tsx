@@ -8,6 +8,7 @@ import { Label } from '../../components/ui/label';
 import { useToast } from '../../components/ui/use-toast';
 import { Toaster } from '../../components/ui/toaster';
 import { Eye, EyeOff } from 'lucide-react';
+import { TestConnection } from '../../components/TestConnection';
 
 export function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
@@ -106,6 +107,11 @@ export function SignIn() {
             </CardFooter>
           </form>
         </Card>
+        
+        {/* Debug component */}
+        <div className="mt-8">
+          <TestConnection />
+        </div>
       </div>
       <Toaster />
     </>

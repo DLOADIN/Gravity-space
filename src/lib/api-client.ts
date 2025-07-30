@@ -13,12 +13,8 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
   const url = `${API_BASE_URL}${normalizedEndpoint}`
 
-  // Get auth token from localStorage
-  const token = localStorage.getItem('token')
-
   const requestHeaders = {
     'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
     ...headers,
   }
 
@@ -26,6 +22,7 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
     method,
     headers: requestHeaders,
     body: body ? JSON.stringify(body) : undefined,
+    credentials: 'include', // Include cookies for session-based auth
   })
 
   if (!response.ok) {
@@ -40,10 +37,10 @@ export const api = {
   get: <T>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>) => 
     apiClient<T>(endpoint, { ...options, method: 'GET' }),
   
-  post: <T>(endpoint: string, body: any, options?: Omit<RequestOptions, 'method'>) => 
+  post: <T>(endpoint: string, body: any, options?: Omit<RequestOptions, 'method' | 'body'>) => 
     apiClient<T>(endpoint, { ...options, method: 'POST', body }),
   
-  put: <T>(endpoint: string, body: any, options?: Omit<RequestOptions, 'method'>) => 
+  put: <T>(endpoint: string, body: any, options?: Omit<RequestOptions, 'method' | 'body'>) => 
     apiClient<T>(endpoint, { ...options, method: 'PUT', body }),
   
   delete: <T>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>) => 

@@ -5,9 +5,9 @@ export const API_ENDPOINTS = {
     signin: '/login',
     signup: '/signup',
   },
-  artworks: '/api/artworks',
-  categories: '/api/categories',
-  artists: '/api/artists',
+  categories: '/categories',
+  artists: '/artists',
+  artworks: '/artworks',
   transactions: '/api/transactions',
   checkout: '/api/checkout',
 } as const; 
