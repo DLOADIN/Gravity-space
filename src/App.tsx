@@ -22,6 +22,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import CategoryPieces from './pages/CategoryPieces'
 import CollectionPage from '@/pages/CollectionPage'
 import EventPage from '@/pages/EventPage'
+import ArtistDashboard from '@/pages/ArtistDashboard';
+import CollectorDashboard from '@/pages/CollectorDashboard';
 
 const queryClient = new QueryClient()
 
@@ -121,6 +123,22 @@ export default function App() {
                     <ArtistRoute>
                       <div>Edit Artwork Page (TODO)</div>
                     </ArtistRoute>
+                  }
+                />
+                <Route
+                  path="/artist-dashboard"
+                  element={
+                    <PrivateRoute>
+                      <ArtistDashboard />
+                    </PrivateRoute>
+                  }
+                />
+                <Route
+                  path="/collector-dashboard"
+                  element={
+                    <PrivateRoute>
+                      <CollectorDashboard />
+                    </PrivateRoute>
                   }
                 />
               </Route>

@@ -1,9 +1,9 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 export const API_ENDPOINTS = {
   auth: {
-    signin: '/api/auth/signin',
-    signup: '/api/auth/signup',
+    signin: '/login',
+    signup: '/signup',
   },
   artworks: '/api/artworks',
   categories: '/api/categories',
