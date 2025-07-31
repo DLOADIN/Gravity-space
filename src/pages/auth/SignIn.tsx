@@ -42,8 +42,9 @@ export function SignIn() {
 
   return (
     <>
-      <div className="container flex h-screen w-screen flex-col items-center justify-center">
-        <Card className="w-[350px]">
+      <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-8 bg-gray-50 space-y-10">
+        {/* Sign-in Card */}
+        <Card className="w-[390px] shadow-md mt-[20vh] rounded-xl bg-white">
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
             <CardDescription>
@@ -107,13 +108,13 @@ export function SignIn() {
             </CardFooter>
           </form>
         </Card>
-
-        <div>
-                <Card className="flex flex-col items-center justify-center mx-auto max-w-xl p-6 bg-white shadow-lg rounded-2xl space-y-6 text-center">
+  
+        {/* Info Card */}
+        <Card className="flex flex-col items-center justify-center max-w-xl p-6 bg-white shadow-lg rounded-2xl space-y-6 text-center">
           <CardDescription className="text-gray-600 text-sm uppercase tracking-wide">
             EXISTING LOGIN CREDENTIALS OR CHOOSE TO SIGNUP ☝️
           </CardDescription>
-
+  
           <div className="bg-gray-100 p-4 rounded-lg w-full">
             <h2 className="text-lg font-semibold text-blue-700">COLLECTOR DETAILS</h2>
             <p className="text-sm text-gray-700 mt-2">
@@ -122,7 +123,7 @@ export function SignIn() {
               <span className="font-medium">Password:</span> grantcordone@gmail.com
             </p>
           </div>
-
+  
           <div className="bg-gray-100 p-4 rounded-lg w-full">
             <h2 className="text-lg font-semibold text-green-700">ARTISTS DETAILS</h2>
             <p className="text-sm text-gray-700 mt-2">
@@ -132,9 +133,10 @@ export function SignIn() {
             </p>
           </div>
         </Card>
-        </div>
       </div>
+  
       <Toaster />
     </>
   );
+  
 } 
