@@ -1,0 +1,32 @@
+# Exclude API directory (separate backend)
+api/
+
+# Exclude backend directory
+Backend/
+
+# Exclude development files
+node_modules/
+.git/
+.vite/
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclude build artifacts
+dist/
+build/
+
+# Exclude documentation
+*.md
+!README.md
+
+# Exclude deployment scripts
+deploy.sh
+deploy.bat
+gitoperations.sh
+
+# Exclude lock files (Vercel will generate its own)
+bun.lockb
+bun.lock 
