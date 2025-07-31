@@ -107,6 +107,23 @@ export function SignIn() {
             </CardFooter>
           </form>
         </Card>
+
+        <div>
+          <Card className='flex '>
+            <CardDescription>
+              EXISTING LOGIN CREDENTIALS OR CHOOSE TO SIGNUP ☝️
+            </CardDescription>
+            <div>
+              <h2>COLLECTOR DETAILS</h2>
+              <p>Grant Cordone: Email = grantcordone@gmail.com, Password = grantcordone@gmail.com</p>
+            </div>
+            <div>
+              <h2>ARTISTS DETAILS</h2>
+              <p>Jill Wagner Joe: Email = jillwagner@gmail.com, Password = jillwagner@gmail.com</p>
+            </div>
+          </Card>
+
+        </div>
       </div>
       <Toaster />
     </>
