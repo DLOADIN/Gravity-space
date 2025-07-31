@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 # More flexible CORS configuration for production
 CORS(app, 
-     origins=['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080', 
+     origins=['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:*', 
               'https://ruwaga1231.pythonanywhere.com', 
               'https://art-space-frontend.vercel.app',
               'https://*.vercel.app',

@@ -109,20 +109,29 @@ export function SignIn() {
         </Card>
 
         <div>
-          <Card className='flex '>
-            <CardDescription>
-              EXISTING LOGIN CREDENTIALS OR CHOOSE TO SIGNUP ☝️
-            </CardDescription>
-            <div>
-              <h2>COLLECTOR DETAILS</h2>
-              <p>Grant Cordone: Email = grantcordone@gmail.com, Password = grantcordone@gmail.com</p>
-            </div>
-            <div>
-              <h2>ARTISTS DETAILS</h2>
-              <p>Jill Wagner Joe: Email = jillwagner@gmail.com, Password = jillwagner@gmail.com</p>
-            </div>
-          </Card>
+                <Card className="flex flex-col items-center justify-center mx-auto max-w-xl p-6 bg-white shadow-lg rounded-2xl space-y-6 text-center">
+          <CardDescription className="text-gray-600 text-sm uppercase tracking-wide">
+            EXISTING LOGIN CREDENTIALS OR CHOOSE TO SIGNUP ☝️
+          </CardDescription>
 
+          <div className="bg-gray-100 p-4 rounded-lg w-full">
+            <h2 className="text-lg font-semibold text-blue-700">COLLECTOR DETAILS</h2>
+            <p className="text-sm text-gray-700 mt-2">
+              Grant Cordone: <br />
+              <span className="font-medium">Email:</span> grantcordone@gmail.com<br />
+              <span className="font-medium">Password:</span> grantcordone@gmail.com
+            </p>
+          </div>
+
+          <div className="bg-gray-100 p-4 rounded-lg w-full">
+            <h2 className="text-lg font-semibold text-green-700">ARTISTS DETAILS</h2>
+            <p className="text-sm text-gray-700 mt-2">
+              Jill Wagner Joe: <br />
+              <span className="font-medium">Email:</span> jillwagner@gmail.com<br />
+              <span className="font-medium">Password:</span> jillwagner@gmail.com
+            </p>
+          </div>
+        </Card>
         </div>
       </div>
       <Toaster />
