@@ -3,10 +3,34 @@ from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import mysql.connector
 import bcrypt
+import jwt
+from datetime import datetime, timedelta
+from functools import wraps
 
 app = Flask(__name__)
-CORS(app, origins=['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080'], supports_credentials=True)
-app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key')
+
+# More flexible CORS configuration for production
+CORS(app, 
+     origins=['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080', 
+              'https://ruwaga1231.pythonanywhere.com', 
+              'https://art-space-frontend.vercel.app',
+              'https://*.vercel.app',
+              'https://*.netlify.app'],  # Also allow Netlify if you use it
+     supports_credentials=True,
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+
+# Set a strong secret key for production
+app.secret_key = os.environ.get('SECRET_KEY', 'your-super-secret-key-change-this-in-production')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'your-jwt-secret-key-change-this-in-production')
+
+# Configure session for production - more flexible for cross-domain
+app.config.update(
+    SESSION_COOKIE_SECURE=True,  # Only send cookies over HTTPS
+    SESSION_COOKIE_HTTPONLY=True,  # Prevent JavaScript access
+    SESSION_COOKIE_SAMESITE='None',  # Allow cross-site requests
+    SESSION_COOKIE_DOMAIN=None,  # Let Flask set the domain automatically
+)
 
 # Database connection
 DB_CONFIG = {
@@ -19,6 +43,49 @@ DB_CONFIG = {
 
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
+
+def create_jwt_token(user_id, role):
+    """Create a JWT token for the user"""
+    payload = {
+        'user_id': user_id,
+        'role': role,
+        'exp': datetime.utcnow() + timedelta(days=7),  # Token expires in 7 days
+        'iat': datetime.utcnow()
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm='HS256')
+
+def verify_jwt_token(token):
+    """Verify and decode a JWT token"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+def require_auth(f):
+    """Decorator to require authentication via JWT or session"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # First try to get user from session (for same-domain requests)
+        if 'user_id' in session:
+            return f(*args, **kwargs)
+        
+        # Then try to get user from JWT token (for cross-domain requests)
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+            payload = verify_jwt_token(token)
+            if payload:
+                # Store user info in request context for this request
+                request.user_id = payload['user_id']
+                request.user_role = payload['role']
+                return f(*args, **kwargs)
+        
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    return decorated_function
 
 @app.route('/dashboard/stats/test', methods=['GET'])
 def get_dashboard_stats_test():
@@ -74,16 +141,48 @@ def get_dashboard_stats_test():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+@app.route('/debug/session', methods=['GET'])
+def debug_session():
+    """Debug endpoint to check session state"""
+    return jsonify({
+        'session_data': dict(session),
+        'user_id_in_session': session.get('user_id'),
+        'role_in_session': session.get('role'),
+        'session_id': session.sid if hasattr(session, 'sid') else 'No session ID',
+        'cookies': dict(request.cookies),
+        'headers': dict(request.headers)
+    }), 200
+
+@app.route('/debug/auth', methods=['GET'])
+def debug_auth():
+    """Debug endpoint to check authentication status"""
+    if 'user_id' in session:
+        return jsonify({
+            'authenticated': True,
+            'user_id': session['user_id'],
+            'role': session.get('role'),
+            'message': 'User is authenticated'
+        }), 200
+    else:
+        return jsonify({
+            'authenticated': False,
+            'message': 'User is not authenticated',
+            'session_keys': list(session.keys())
+        }), 401
+
 @app.route('/dashboard/stats', methods=['GET'])
+@require_auth
 def get_dashboard_stats():
-    if 'user_id' not in session:
+    # Get user_id from either session or JWT token
+    user_id = session.get('user_id') or getattr(request, 'user_id', None)
+    
+    if not user_id:
         return jsonify({'error': 'Unauthorized'}), 401
     
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        user_id = session['user_id']
         print(f"Fetching dashboard stats for user_id: {user_id}")
         
         # Get total counts
@@ -294,6 +393,15 @@ def get_artist_dashboard_stats():
 def test():
     return jsonify({'message': 'Server is running!'}), 200
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Flask server is running',
+        'timestamp': '2025-07-31T14:48:00Z'
+    }), 200
+
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.json
@@ -336,11 +444,13 @@ def login():
             return jsonify({'error': 'Invalid credentials'}), 401
         session['user_id'] = user['id']
         session['role'] = user['role']
+        token = create_jwt_token(user['id'], user['role'])
         return jsonify({
             'message': 'Login successful', 
             'role': user['role'], 
             'name': user['name'],
-            'id': user['id']
+            'id': user['id'],
+            'token': token
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -367,9 +477,8 @@ def dashboard():
 
 # Categories endpoints
 @app.route('/categories', methods=['GET'])
+@require_auth
 def get_categories():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -384,19 +493,22 @@ def get_categories():
         conn.close()
 
 @app.route('/categories', methods=['POST'])
+@require_auth
 def create_category():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
     name = data.get('name')
     description = data.get('description', '')
     if not name:
         return jsonify({'error': 'Name is required'}), 400
+    
+    # Get user_id from either session or JWT token
+    user_id = session.get('user_id') or getattr(request, 'user_id', None)
+    
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('INSERT INTO categories (name, description, created_by) VALUES (%s, %s, %s)',
-                       (name, description, session['user_id']))
+                       (name, description, user_id))
         conn.commit()
         return jsonify({'message': 'Category created successfully'}), 201
     except Exception as e:
@@ -448,9 +560,8 @@ def delete_category(category_id):
 
 # Artists endpoints
 @app.route('/artists', methods=['GET'])
+@require_auth
 def get_artists():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -465,9 +576,8 @@ def get_artists():
         conn.close()
 
 @app.route('/artists', methods=['POST'])
+@require_auth
 def create_artist():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Unauthorized'}), 401
     data = request.json
     name = data.get('name')
     bio = data.get('bio', '')
@@ -476,11 +586,15 @@ def create_artist():
     website = data.get('website', '')
     if not name:
         return jsonify({'error': 'Name is required'}), 400
+    
+    # Get user_id from either session or JWT token
+    user_id = session.get('user_id') or getattr(request, 'user_id', None)
+    
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('INSERT INTO artists (name, bio, email, phone, website, created_by) VALUES (%s, %s, %s, %s, %s, %s)',
-                       (name, bio, email, phone, website, session['user_id']))
+                       (name, bio, email, phone, website, user_id))
         conn.commit()
         return jsonify({'message': 'Artist created successfully'}), 201
     except Exception as e:

@@ -76,4 +76,4 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 console.log(`Server is running on port ${port}`);
-console.log(`Swagger documentation available at http://localhost:${port}/swagger`); 
+console.log(`Swagger documentation available at https://ruwaga1231.pythonanywhere.com/swagger`); 

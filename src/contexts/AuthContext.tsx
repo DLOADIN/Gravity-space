@@ -16,6 +16,7 @@ interface AuthContextType {
   signin: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string, role: 'user' | 'artist') => Promise<void>;
   signout: () => void;
+  getAuthHeaders: () => Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,8 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check for stored auth data
     const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
     
-    if (storedUser) {
+    if (storedUser && token) {
       setUser(JSON.parse(storedUser));
     }
     
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signin = async (email: string, password: string) => {
     try {
-      const data = await api.post<{ message: string; role: 'user' | 'artist'; name: string; id: number }>(API_ENDPOINTS.auth.signin, {
+      const data = await api.post<{ message: string; role: 'user' | 'artist'; name: string; id: number; token: string }>(API_ENDPOINTS.auth.signin, {
         email,
         password
       });
@@ -50,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setUser(user);
       localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', data.token);
       navigate(data.role === 'artist' ? '/artist-dashboard' : '/collector-dashboard');
     } catch (error) {
       console.error('Sign in error:', error);
@@ -82,12 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setUser(null);
       localStorage.removeItem('user');
+      localStorage.removeItem('token');
       navigate('/signin');
     }
   };
 
+  const getAuthHeaders = (): Record<string, string> => {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, signin, signup, signout }}>
+    <AuthContext.Provider value={{ user, isLoading, signin, signup, signout, getAuthHeaders }}>
       {children}
     </AuthContext.Provider>
   );

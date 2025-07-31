@@ -13,16 +13,24 @@ export async function apiClient<T>(endpoint: string, options: RequestOptions = {
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
   const url = `${API_BASE_URL}${normalizedEndpoint}`
 
+  // Get JWT token from localStorage
+  const token = localStorage.getItem('token')
+  
   const requestHeaders = {
     'Content-Type': 'application/json',
     ...headers,
+  }
+
+  // Add Authorization header if token exists
+  if (token) {
+    requestHeaders['Authorization'] = `Bearer ${token}`
   }
 
   const response = await fetch(url, {
     method,
     headers: requestHeaders,
     body: body ? JSON.stringify(body) : undefined,
-    credentials: 'include', // Include cookies for session-based auth
+    credentials: 'include', // Include cookies for session-based auth as fallback
   })
 
   if (!response.ok) {
