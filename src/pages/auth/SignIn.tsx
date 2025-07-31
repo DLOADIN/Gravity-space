@@ -44,7 +44,7 @@ export function SignIn() {
     <>
       <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 py-8 bg-gray-50 space-y-10">
         {/* Sign-in Card */}
-        <Card className="w-[390px] shadow-md mt-[20vh] rounded-xl bg-white">
+        <Card className="w-[390px] shadow-md mt-[18vh] rounded-xl bg-white">
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
             <CardDescription>
