@@ -10,10 +10,11 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret_key')
 
 # Database connection
 DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'user': os.environ.get('DB_USER', 'root'),
-    'password': os.environ.get('DB_PASSWORD', ''),
-    'database': os.environ.get('DB_NAME', 'art_space')
+    'host': os.environ.get('DB_HOST', 'ruwaga1231.mysql.pythonanywhere-services.com'),
+    'user': os.environ.get('DB_USER', 'ruwaga1231'),
+    'password': os.environ.get('DB_PASSWORD', 'TestPassword123!'),
+    'database': os.environ.get('DB_NAME', 'ruwaga1231$default'),
+    'port':os.environ.get('DB_PORT', 3306)
 }
 
 def get_db_connection():
