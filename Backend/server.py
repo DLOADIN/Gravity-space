@@ -15,7 +15,8 @@ CORS(app,
               'https://ruwaga1231.pythonanywhere.com', 
               'https://art-space-frontend.vercel.app',
               'https://*.vercel.app',
-              'https://*.netlify.app'],  # Also allow Netlify if you use it
+              'https://gravity-space-rose.vercel.app'
+            ],  # Also allow Netlify if you use it
      supports_credentials=True,
      allow_headers=['Content-Type', 'Authorization'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
