@@ -312,7 +312,7 @@ export default function Index() {
                   className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer"
                 >
                   <img 
-                    src="/assets/images/fashion design.jpg"
+                    src="/assets/images/download(32).jpg"
                     alt="Fashion Design"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                   />

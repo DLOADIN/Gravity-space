@@ -9,91 +9,91 @@ const categories = [
     id: "1",
     name: "Paintings",
     description: "Traditional & contemporary painting",
-    imageUrl: "/src/assets/images/painting.jpg",
+    imageUrl: "/assets/images/painting.jpg",
     slug: "paintings"
   },
   {
     id: "2",
     name: "Sculptures",
     description: "3D artworks and sculptures",
-    imageUrl: "/src/assets/images/sculptures.jpg",
+    imageUrl: "/assets/images/download (23).jpg",
     slug: "sculptures"
   },
   {
     id: "3",
     name: "Performative Art",
     description: "Live art performances",
-    imageUrl: "/src/assets/images/performative art icon.jpg",
+    imageUrl: "/assets/images/download (36).jpg",
     slug: "performative-art"
   },
   {
     id: "4",
     name: "Digital Art",
     description: "Digital creations and NFTs",
-    imageUrl: "/src/assets/images/digital art.jpg",
+    imageUrl: "/assets/images/digital art.jpg",
     slug: "digital-art"
   },
   {
     id: "5",
     name: "Animation",
     description: "Animated artworks",
-    imageUrl: "/src/assets/images/animated.jpg",
+    imageUrl: "/assets/images/download (22).jpg",
     slug: "animation"
   },
   {
     id: "6",
     name: "Fashion Design",
     description: "Contemporary fashion",
-    imageUrl: "/src/assets/images/fashion design.jpg",
+    imageUrl: "/assets/images/download (3).jpg",
     slug: "fashion-design"
   },
   {
     id: "7",
     name: "Web Design",
     description: "Digital web experiences",
-    imageUrl: "/src/assets/images/web design icon.jpg",
+    imageUrl: "/assets/images/web design icon.jpg",
     slug: "web-design"
   },
   {
     id: "8",
     name: "Drawing",
     description: "Sketches and illustrations",
-    imageUrl: "/src/assets/images/drawing.jpg",
+    imageUrl: "/assets/images/drawing.jpg",
     slug: "drawing"
   },
   {
     id: "9",
     name: "Arts & Crafts",
     description: "Handmade creations",
-    imageUrl: "/src/assets/images/arts and craft.jpg",
+    imageUrl: "/assets/images/arts and craft.jpg",
     slug: "arts-and-crafts"
   },
   {
     id: "10",
     name: "Jewelry",
     description: "Artistic jewelry pieces",
-    imageUrl: "/src/assets/images/download (1).jpg",
+    imageUrl: "/assets/images/download (1).jpg",
     slug: "jewelry"
   },
   {
     id: "11",
     name: "Photography",
     description: "Photographic art",
-    imageUrl: "/src/assets/images/photography.jpg",
+    imageUrl: "/assets/images/download (30).jpg",
     slug: "photography"
   },
   {
     id: "12",
     name: "Printmaking",
     description: "Print and press art",
-    imageUrl: "/src/assets/images/printmaking icon.jpg",
+    imageUrl: "/assets/images/printmaking icon.jpg",
     slug: "printmaking"
   },
   {
     id: "13",
     name: "Literature",
     description: "Written artistry",
-    imageUrl: "/src/assets/images/literature.jpg",
+    imageUrl: "/assets/images/literature.jpg",
     slug: "literature"
   }
 ]

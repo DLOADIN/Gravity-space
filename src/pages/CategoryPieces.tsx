@@ -75,7 +75,7 @@ export default function CategoryPieces() {
           {
             id: 'modern-craft',
             name: 'Modern Craft',
-            image: '/assets/images/arts anf craft icon.jpg',
+            image: '/assets/images/download(24).jpg',
             description: 'Contemporary interpretations of traditional crafts',
             pieces: 14
           }
@@ -85,7 +85,7 @@ export default function CategoryPieces() {
           {
             id: 'urban-perspectives',
             name: 'Urban Perspectives',
-            image: '/assets/images/photography.jpg',
+            image: '/assets/images/download(3).jpg',
             description: 'City life through an artistic lens',
             pieces: 20
           },
@@ -102,7 +102,7 @@ export default function CategoryPieces() {
           {
             id: 'avant-garde',
             name: 'Avant-Garde',
-            image: '/assets/images/fashion design.jpg',
+            image: '/assets/images/download(32).jpg',
             description: 'Pushing the boundaries of fashion',
             pieces: 15
           },
@@ -126,7 +126,7 @@ export default function CategoryPieces() {
           {
             id: 'stage-presence',
             name: 'Stage Presence',
-            image: '/assets/images/performative art icon.jpg',
+            image: '/assets/images/download(1).jpg.jpg',
             description: 'The art of performance captured',
             pieces: 16
           }
