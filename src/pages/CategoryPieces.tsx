@@ -75,7 +75,7 @@ export default function CategoryPieces() {
           {
             id: 'modern-craft',
             name: 'Modern Craft',
-            image: '/assets/images/download(24).jpg',
+            image: '/assets/images/download (42).jpg',
             description: 'Contemporary interpretations of traditional crafts',
             pieces: 14
           }
@@ -85,7 +85,7 @@ export default function CategoryPieces() {
           {
             id: 'urban-perspectives',
             name: 'Urban Perspectives',
-            image: '/assets/images/download(3).jpg',
+            image: '/assets/images/download (45).jpg',
             description: 'City life through an artistic lens',
             pieces: 20
           },
@@ -102,7 +102,7 @@ export default function CategoryPieces() {
           {
             id: 'avant-garde',
             name: 'Avant-Garde',
-            image: '/assets/images/download(32).jpg',
+            image: '/assets/images/download (33).jpg',
             description: 'Pushing the boundaries of fashion',
             pieces: 15
           },
@@ -126,7 +126,7 @@ export default function CategoryPieces() {
           {
             id: 'stage-presence',
             name: 'Stage Presence',
-            image: '/assets/images/download(1).jpg.jpg',
+            image: '/assets/images/download (43).jpg',
             description: 'The art of performance captured',
             pieces: 16
           }
@@ -143,7 +143,7 @@ export default function CategoryPieces() {
           {
             id: 'pixel-perfect',
             name: 'Pixel Perfect',
-            image: '/assets/images/ACTIVEGLOW.jpg',
+            image: '/assets/images/fashion design.jpg',
             description: 'Precision in digital artistry',
             pieces: 15
           }
